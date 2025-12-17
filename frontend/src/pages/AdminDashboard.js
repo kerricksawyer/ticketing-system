@@ -3,6 +3,7 @@ import '../styles/AdminDashboard.css';
 
 function AdminDashboard() {
   const [password, setPassword] = useState('');
+  const [adminPassword, setAdminPassword] = useState(''); // Store actual password for API calls
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentTab, setCurrentTab] = useState('createShow');
   const [shows, setShows] = useState([]);
@@ -28,16 +29,16 @@ function AdminDashboard() {
       setError('Please enter admin password');
       return;
     }
+    setAdminPassword(password); // Store for API calls
     setIsAuthenticated(true);
     setError('');
-    setPassword('');
-    loadShows();
-    loadBookings();
+    // Don't clear password yet - we need it for loadShows/loadBookings
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
     setPassword('');
+    setAdminPassword(''); // Clear stored password
     setCurrentTab('createShow');
   };
 
@@ -56,7 +57,7 @@ function AdminDashboard() {
   const loadBookings = async () => {
     try {
       const response = await fetch(`${API_URL}/admin/shows/1/bookings`, {
-        headers: { 'x-admin-password': password }
+        headers: { 'x-admin-password': adminPassword }
       });
       if (response.ok) {
         const data = await response.json();
@@ -83,7 +84,7 @@ function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': password
+          'x-admin-password': adminPassword
         },
         body: JSON.stringify({
           name: showName,
@@ -122,7 +123,7 @@ function AdminDashboard() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-password': password
+          'x-admin-password': adminPassword
         },
         body: JSON.stringify({ rows: rows })
       });
