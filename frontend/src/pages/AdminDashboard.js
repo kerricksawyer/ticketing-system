@@ -18,7 +18,7 @@ function AdminDashboard() {
 
   // Create Seats State
   const [selectedShow, setSelectedShow] = useState('');
-  const [rows, setRows] = useState([{ rowName: 'A', seatCount: 10 }]);
+  const [rows, setRows] = useState([{ rowName: 'A', seatsPerColumn: 10, columns: 1 }]);
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -133,7 +133,7 @@ function AdminDashboard() {
       }
 
       setSuccess('Seats created successfully!');
-      setRows([{ rowName: 'A', seatCount: 10 }]);
+      setRows([{ rowName: 'A', seatsPerColumn: 10, columns: 1 }]);
       loadShows();
     } catch (err) {
       setError(err.message || 'Failed to create seats');
@@ -145,14 +145,18 @@ function AdminDashboard() {
     const newRows = [...rows];
     const lastRow = newRows[newRows.length - 1];
     const nextRowName = String.fromCharCode(lastRow.rowName.charCodeAt(0) + 1);
-    newRows.push({ rowName: nextRowName, seatCount: 10 });
+    newRows.push({ rowName: nextRowName, seatsPerColumn: 10, columns: 1 });
     setRows(newRows);
   };
 
   // Update Row
   const handleUpdateRow = (index, field, value) => {
     const newRows = [...rows];
-    newRows[index][field] = field === 'seatCount' ? parseInt(value) : value;
+    if (field === 'seatsPerColumn' || field === 'columns') {
+      newRows[index][field] = parseInt(value);
+    } else {
+      newRows[index][field] = value;
+    }
     setRows(newRows);
   };
 
@@ -292,7 +296,10 @@ function AdminDashboard() {
               </div>
 
               <div className="rows-container">
-                <h3>Rows and Seats</h3>
+                <h3>Rows and Seats Configuration</h3>
+                <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+                  Configure rows with multiple aisles (columns). Example: Row A with 10 seats per column and 2 columns = 20 total seats with an aisle in middle
+                </p>
                 {rows.map((row, index) => (
                   <div key={index} className="row-input-group">
                     <input
@@ -305,13 +312,27 @@ function AdminDashboard() {
                     />
                     <input
                       type="number"
-                      placeholder="Number of seats"
-                      value={row.seatCount}
-                      onChange={(e) => handleUpdateRow(index, 'seatCount', e.target.value)}
+                      placeholder="Seats per column"
+                      value={row.seatsPerColumn}
+                      onChange={(e) => handleUpdateRow(index, 'seatsPerColumn', e.target.value)}
                       className="seat-count-input"
                       min="1"
                       max="100"
+                      title="Number of seats in each section"
                     />
+                    <input
+                      type="number"
+                      placeholder="Number of aisles"
+                      value={row.columns}
+                      onChange={(e) => handleUpdateRow(index, 'columns', e.target.value)}
+                      className="seat-count-input"
+                      min="1"
+                      max="5"
+                      title="Number of sections/aisles (e.g., 2 = left and right of center aisle)"
+                    />
+                    <span style={{ fontSize: '12px', color: '#666', padding: '10px' }}>
+                      Total: {row.seatsPerColumn * row.columns} seats
+                    </span>
                     {rows.length > 1 && (
                       <button
                         type="button"

@@ -8,7 +8,7 @@ function SeatSelection() {
   const navigate = useNavigate();
   const [showData, setShowData] = useState(null);
   const [seats, setSeats] = useState([]);
-  const [selectedSeat, setSelectedSeat] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]); // Changed to array for multiple seats
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState('');
@@ -32,13 +32,17 @@ function SeatSelection() {
 
   const handleSeatClick = (seatId, isBooked) => {
     if (!isBooked) {
-      setSelectedSeat(selectedSeat === seatId ? null : seatId);
+      setSelectedSeats(prev => 
+        prev.includes(seatId) 
+          ? prev.filter(id => id !== seatId) // Deselect if already selected
+          : [...prev, seatId] // Add to selection
+      );
     }
   };
 
   const handleBooking = async () => {
-    if (!selectedSeat) {
-      setError('Please select a seat');
+    if (selectedSeats.length === 0) {
+      setError('Please select at least one seat');
       return;
     }
 
@@ -47,14 +51,19 @@ function SeatSelection() {
     setMessage('');
 
     try {
-      await bookings.create(selectedSeat, showId);
-      setMessage('Booking successful! Check your email for confirmation.');
+      // Book all selected seats
+      const bookingPromises = selectedSeats.map(seatId => 
+        bookings.create(seatId, showId)
+      );
+      
+      await Promise.all(bookingPromises);
+      setMessage(`Booking successful! ${selectedSeats.length} seat(s) booked. Check your email for confirmation.`);
       setTimeout(() => {
         navigate('/bookings');
       }, 2000);
     } catch (err) {
       if (err.response?.status === 409) {
-        setError('Sorry, that seat was just booked. Please select another.');
+        setError('Sorry, one or more seats were just booked. Please refresh and try again.');
         loadShowData(); // Refresh seats
       } else {
         setError(err.response?.data?.error || 'Booking failed');
@@ -81,7 +90,16 @@ function SeatSelection() {
     seatsByRow[seat.row_name].push(seat);
   });
 
-  const selectedSeatData = seats.find((s) => s.id === selectedSeat);
+  // Sort seats within each row numerically
+  Object.keys(seatsByRow).forEach(rowName => {
+    seatsByRow[rowName].sort((a, b) => a.seat_number - b.seat_number);
+  });
+
+  // Sort rows alphabetically
+  const sortedRows = Object.keys(seatsByRow).sort();
+
+  // Get selected seat data for display
+  const selectedSeatDataList = seats.filter(s => selectedSeats.includes(s.id));
 
   return (
     <div className="seat-selection-container">
@@ -98,7 +116,7 @@ function SeatSelection() {
         <div className="screen">SCREEN</div>
 
         <div className="seats">
-          {Object.keys(seatsByRow).map((rowName) => (
+          {sortedRows.map((rowName) => (
             <div key={rowName} className="seat-row">
               <div className="row-label">{rowName}</div>
               <div className="row-seats">
@@ -106,7 +124,7 @@ function SeatSelection() {
                   <button
                     key={seat.id}
                     className={`seat ${seat.is_booked ? 'booked' : ''} ${
-                      selectedSeat === seat.id ? 'selected' : ''
+                      selectedSeats.includes(seat.id) ? 'selected' : ''
                     }`}
                     onClick={() => handleSeatClick(seat.id, seat.is_booked)}
                     disabled={seat.is_booked}
@@ -137,13 +155,14 @@ function SeatSelection() {
         </div>
       </div>
 
-      {selectedSeatData && (
+      {selectedSeats.length > 0 && (
         <div className="booking-summary">
           <p>
-            Selected Seat: <strong>{selectedSeatData.row_name}{selectedSeatData.seat_number}</strong>
+            Selected Seats: <strong>{selectedSeatDataList.map(s => `${s.row_name}${s.seat_number}`).join(', ')}</strong>
           </p>
+          <p>Total: <strong>{selectedSeats.length} seat(s)</strong></p>
           <button onClick={handleBooking} disabled={booking} className="book-btn">
-            {booking ? 'Booking...' : 'Confirm Booking'}
+            {booking ? 'Booking...' : `Confirm Booking (${selectedSeats.length} seat${selectedSeats.length !== 1 ? 's' : ''})`}
           </button>
         </div>
       )}
