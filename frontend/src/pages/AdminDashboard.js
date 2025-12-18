@@ -19,6 +19,9 @@ function AdminDashboard() {
   // Create Seats State
   const [selectedShow, setSelectedShow] = useState('');
   const [rows, setRows] = useState([{ rowName: 'A', seatsPerColumn: 10, columns: 1 }]);
+  const [selectedShowForMap, setSelectedShowForMap] = useState(''); // For seat map
+  const [showSeats, setShowSeats] = useState([]); // For seat map
+  const [hoveredSeat, setHoveredSeat] = useState(null); // For seat hover tooltip
 
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -166,6 +169,23 @@ function AdminDashboard() {
     setRows(newRows);
   };
 
+  // Load seats for seat map
+  const loadSeatsForMap = async (showId) => {
+    try {
+      const response = await fetch(`${API_URL}/shows/${showId}`);
+      const data = await response.json();
+      setShowSeats(data.seats || []);
+    } catch (err) {
+      setError('Failed to load seats');
+    }
+  };
+
+  // Handle show selection for seat map
+  const handleSelectShowForMap = (showId) => {
+    setSelectedShowForMap(showId);
+    loadSeatsForMap(showId);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="admin-login-container">
@@ -221,6 +241,12 @@ function AdminDashboard() {
           onClick={() => setCurrentTab('bookings')}
         >
           📊 View Bookings
+        </button>
+        <button
+          className={`tab ${currentTab === 'seatMap' ? 'active' : ''}`}
+          onClick={() => setCurrentTab('seatMap')}
+        >
+          🎫 Seat Map
         </button>
       </div>
 
@@ -417,6 +443,123 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {/* Seat Map Tab */}
+        {currentTab === 'seatMap' && (
+          <div className="admin-section">
+            <h2>🎫 Seat Map - Click Booked Seats to See Details</h2>
+            
+            <div className="form-group">
+              <label>Select Show</label>
+              <select
+                value={selectedShowForMap}
+                onChange={(e) => handleSelectShowForMap(e.target.value)}
+                className="form-input"
+              >
+                <option value="">-- Choose a show --</option>
+                {shows.map((show) => (
+                  <option key={show.id} value={show.id}>
+                    {show.name} ({new Date(show.date).toLocaleDateString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedShowForMap && showSeats.length > 0 && (
+              <div className="seat-map-container">
+                <div className="seat-map-legend">
+                  <div className="legend-item">
+                    <div className="seat-indicator available"></div>
+                    <span>Available</span>
+                  </div>
+                  <div className="legend-item">
+                    <div className="seat-indicator booked"></div>
+                    <span>Booked (hover for details)</span>
+                  </div>
+                </div>
+
+                <div className="screen">SCREEN</div>
+
+                <div className="seat-map">
+                  {(() => {
+                    // Group seats by row
+                    const seatsByRow = {};
+                    showSeats.forEach((seat) => {
+                      if (!seatsByRow[seat.row_name]) {
+                        seatsByRow[seat.row_name] = [];
+                      }
+                      seatsByRow[seat.row_name].push(seat);
+                    });
+
+                    // Sort rows and seats
+                    const sortedRows = Object.keys(seatsByRow).sort();
+                    Object.keys(seatsByRow).forEach(rowName => {
+                      seatsByRow[rowName].sort((a, b) => a.seat_number - b.seat_number);
+                    });
+
+                    return sortedRows.map((rowName) => (
+                      <div key={rowName} className="seat-row-map">
+                        <div className="row-label-map">{rowName}</div>
+                        <div className="seats-grid">
+                          {seatsByRow[rowName].map((seat) => (
+                            <div
+                              key={seat.id}
+                              className="seat-container"
+                              onMouseEnter={() => setHoveredSeat(seat.id)}
+                              onMouseLeave={() => setHoveredSeat(null)}
+                            >
+                              <button
+                                className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
+                                title={seat.is_booked ? 'Click to see booking' : 'Available'}
+                              >
+                                {seat.seat_number}
+                              </button>
+                              
+                              {hoveredSeat === seat.id && seat.is_booked && (
+                                <div className="seat-tooltip">
+                                  {showSeats.find(s => s.id === seat.id) && 
+                                    showSeats.filter(s => s.id === seat.id).map((s) => {
+                                      const booking = bookings.find(b => b.seat_id === s.id);
+                                      return (
+                                        <div key={s.id}>
+                                          <strong>{s.row_name}{s.seat_number}</strong>
+                                          <p style={{margin: '4px 0'}}>
+                                            {booking?.parent_email || 'Booked'}
+                                          </p>
+                                          {booking?.parent_first_name && (
+                                            <p style={{margin: '4px 0', fontSize: '12px'}}>
+                                              {booking.parent_first_name} {booking.parent_last_name}
+                                            </p>
+                                          )}
+                                          {booking?.checked_in && (
+                                            <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
+                                              ✓ Checked In
+                                            </p>
+                                          )}
+                                        </div>
+                                      );
+                                    })
+                                  }
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="row-label-map">{rowName}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {selectedShowForMap && showSeats.length === 0 && (
+              <p>No seats configured for this show yet.</p>
+            )}
+
+            {!selectedShowForMap && (
+              <p>Select a show to view the seat map.</p>
+            )}
       </div>
     </div>
   );
