@@ -6,8 +6,17 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo, confirmationToken, qrCodeData) => {
   try {
-    // Generate QR code as data URL
-    const qrCodeUrl = await QRCode.toDataURL(qrCodeData);
+    // Generate QR code as PNG buffer
+    const qrCodeBuffer = await QRCode.toBuffer(qrCodeData, {
+      errorCorrectionLevel: 'H',
+      type: 'image/png',
+      width: 300,
+      margin: 1,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF',
+      },
+    });
 
     const msg = {
       to: parentEmail,
@@ -27,7 +36,7 @@ const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo
 
           <div style="text-align: center; margin: 30px 0;">
             <p><strong>Scan this QR code at check-in:</strong></p>
-            <img src="${qrCodeUrl}" alt="QR Code" style="width: 200px; height: 200px;">
+            <img src="cid:qrcode" alt="QR Code" style="width: 300px; height: 300px;">
           </div>
 
           <p style="color: #666; font-size: 12px;">
@@ -35,6 +44,15 @@ const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo
           </p>
         </div>
       `,
+      attachments: [
+        {
+          content: qrCodeBuffer.toString('base64'),
+          filename: 'qrcode.png',
+          type: 'image/png',
+          disposition: 'inline',
+          contentId: 'qrcode',
+        },
+      ],
     };
 
     await sgMail.send(msg);
