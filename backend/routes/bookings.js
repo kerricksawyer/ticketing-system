@@ -91,6 +91,26 @@ router.get('/my-bookings', authMiddleware, async (req, res) => {
 });
 
 // Check in with QR code
+// Check-in via QR code (GET - when link is opened)
+router.get('/check-in/:confirmationToken', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'UPDATE bookings SET checked_in = TRUE, checked_in_at = NOW() WHERE confirmation_token = $1 RETURNING *',
+      [req.params.confirmationToken]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    res.json({ message: 'Successfully checked in', booking: result.rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to check in' });
+  }
+});
+
+// Check-in via POST (for backward compatibility)
 router.post('/check-in/:confirmationToken', async (req, res) => {
   try {
     const result = await pool.query(
