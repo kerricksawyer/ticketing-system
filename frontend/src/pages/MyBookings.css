@@ -96,6 +96,40 @@
   color: #666;
   font-size: 0.9rem;
   margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.booking-qr strong {
+  display: block;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.qr-code-container {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.qr-code-container canvas {
+  border: 2px solid #ddd;
+  border-radius: 4px;
+}
+
+.check-in-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+
+.check-in-link:hover {
+  text-decoration: underline;
 }
 
 .no-bookings {
