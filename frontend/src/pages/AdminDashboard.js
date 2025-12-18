@@ -560,6 +560,8 @@ function AdminDashboard() {
             {!selectedShowForMap && (
               <p>Select a show to view the seat map.</p>
             )}
+          </div>
+        )}
       </div>
     </div>
   );
