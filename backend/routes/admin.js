@@ -37,7 +37,7 @@ router.post('/shows', checkAdminPassword, async (req, res) => {
 // Create rows and seats for a show
 router.post('/shows/:showId/seats', checkAdminPassword, async (req, res) => {
   const { rows } = req.body;
-  // rows should be: [{ rowName: 'A', seatCount: 10 }, { rowName: 'B', seatCount: 10 }]
+  // rows should be: [{ rowName: 'A', seatsPerColumn: 10, columns: 2 }, ...]
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return res.status(400).json({ error: 'Rows array is required' });
@@ -60,12 +60,20 @@ router.post('/shows/:showId/seats', checkAdminPassword, async (req, res) => {
       const rowId = rowResult.rows[0].id;
 
       // Create seats for this row
-      for (let i = 1; i <= row.seatCount; i++) {
-        const seatResult = await client.query(
-          'INSERT INTO seats (row_id, seat_number) VALUES ($1, $2) RETURNING *',
-          [rowId, i.toString()]
-        );
-        createdSeats.push(seatResult.rows[0]);
+      // For multiple columns: create seats with numbering like 1-10, 11-20 for each column
+      let seatNumber = 1;
+      const columns = row.columns || 1;
+      const seatsPerColumn = row.seatsPerColumn || row.seatCount || 10;
+
+      for (let col = 0; col < columns; col++) {
+        for (let i = 1; i <= seatsPerColumn; i++) {
+          const seatResult = await client.query(
+            'INSERT INTO seats (row_id, seat_number) VALUES ($1, $2) RETURNING *',
+            [rowId, seatNumber.toString()]
+          );
+          createdSeats.push(seatResult.rows[0]);
+          seatNumber++;
+        }
       }
     }
 
