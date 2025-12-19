@@ -602,3 +602,24 @@ table tr:hover {
 .delete-show-button:hover {
   background: #c0392b;
 }
+
+/* Seat Grid with Aisle */
+
+.seats-grid-with-aisle {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.seats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aisle-spacer {
+  width: 20px;
+  background: linear-gradient(to right, #ddd, transparent, #ddd);
+  margin: 0 10px;
+}
