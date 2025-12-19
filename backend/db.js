@@ -66,6 +66,17 @@ const initializeDatabase = async () => {
       CREATE INDEX IF NOT EXISTS idx_parents_email ON parents(email);
     `);
 
+    // Add columns to existing rows table if they don't exist
+    await client.query(`
+      ALTER TABLE rows
+      ADD COLUMN IF NOT EXISTS columns INTEGER DEFAULT 1
+    `);
+
+    await client.query(`
+      ALTER TABLE rows
+      ADD COLUMN IF NOT EXISTS seats_per_column INTEGER DEFAULT 10
+    `);
+
     console.log('Database initialized successfully');
   } catch (err) {
     console.error('Error initializing database:', err);
