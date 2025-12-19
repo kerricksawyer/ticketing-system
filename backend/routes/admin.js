@@ -51,10 +51,10 @@ router.post('/shows/:showId/seats', checkAdminPassword, async (req, res) => {
     const createdSeats = [];
 
     for (const row of rows) {
-      // Create row
+      // Create row with column information
       const rowResult = await client.query(
-        'INSERT INTO rows (show_id, row_name) VALUES ($1, $2) RETURNING id',
-        [req.params.showId, row.rowName]
+        'INSERT INTO rows (show_id, row_name, columns, seats_per_column) VALUES ($1, $2, $3, $4) RETURNING id',
+        [req.params.showId, row.rowName, row.columns || 1, row.seatsPerColumn || 10]
       );
 
       const rowId = rowResult.rows[0].id;

@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const seatsResult = await pool.query(`
-      SELECT s.id, s.seat_number, s.is_booked, r.row_name
+      SELECT s.id, s.seat_number, s.is_booked, r.row_name, r.columns, r.seats_per_column
       FROM seats s
       JOIN rows r ON s.row_id = r.id
       WHERE r.show_id = $1
