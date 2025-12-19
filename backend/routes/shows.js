@@ -5,7 +5,19 @@ const router = express.Router();
 // Get all shows
 router.get('/', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM shows ORDER BY date DESC');
+    const result = await pool.query(`
+      SELECT 
+        s.id,
+        s.name,
+        s.description,
+        s.date,
+        s.created_at,
+        (SELECT COUNT(*) FROM rows WHERE show_id = s.id) as row_count,
+        (SELECT COUNT(*) FROM seats WHERE row_id IN (SELECT id FROM rows WHERE show_id = s.id)) as total_seats,
+        (SELECT COUNT(*) FROM seats WHERE row_id IN (SELECT id FROM rows WHERE show_id = s.id) AND is_booked = TRUE) as booked_seats
+      FROM shows s
+      ORDER BY s.date DESC
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
