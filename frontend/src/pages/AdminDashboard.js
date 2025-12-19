@@ -197,6 +197,8 @@ function AdminDashboard() {
       const response = await fetch(`${API_URL}/shows/${showId}`);
       const data = await response.json();
       setShowSeats(data.seats || []);
+      // Also load all bookings for this show to ensure we have the data
+      await loadBookings();
     } catch (err) {
       setError('Failed to load seats');
     }
@@ -557,125 +559,75 @@ function AdminDashboard() {
                     return sortedRows.map((rowName) => {
                       const rowSeats = seatsByRow[rowName];
                       
-                      // Determine if this row has multiple columns/aisles
-                      // Default: split in half if we have more than 10 seats
-                      let seatsPerColumn = rowSeats.length;
-                      if (rowSeats.length > 10) {
-                        seatsPerColumn = Math.ceil(rowSeats.length / 2);
-                      }
+                      // Get column info from first seat in row
+                      const firstSeat = rowSeats[0];
+                      const columns = firstSeat?.columns || 1;
+                      const seatsPerColumn = firstSeat?.seats_per_column || Math.ceil(rowSeats.length / columns);
                       
                       return (
                         <div key={rowName} className="seat-row-map">
                           <div className="row-label-map">{rowName}</div>
                           <div className="seats-grid-with-aisle">
-                            {/* First column */}
-                            <div className="seats-column">
-                              {rowSeats.slice(0, seatsPerColumn).map((seat) => (
-                                <div
-                                  key={seat.id}
-                                  className="seat-container"
-                                  onMouseEnter={() => setHoveredSeat(seat.id)}
-                                  onMouseLeave={() => setHoveredSeat(null)}
-                                >
-                                  <button
-                                    className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
-                                    title={seat.is_booked ? 'Click to see booking' : 'Available'}
-                                  >
-                                    {seat.seat_number}
-                                  </button>
-                                  
-                                  {hoveredSeat === seat.id && seat.is_booked && (
-                                    <div className="seat-tooltip">
-                                      {(() => {
-                                        const booking = bookings.find(b => b.seat_id === seat.id);
-                                        return (
-                                          <div>
-                                            <strong>{seat.row_name}{seat.seat_number}</strong>
-                                            {booking?.parent_first_name && booking?.parent_last_name ? (
-                                              <>
-                                                <p style={{margin: '4px 0', fontSize: '13px', fontWeight: 'bold'}}>
-                                                  {booking.parent_first_name} {booking.parent_last_name}
-                                                </p>
-                                                <p style={{margin: '4px 0', fontSize: '11px'}}>
-                                                  {booking.parent_email}
-                                                </p>
-                                              </>
-                                            ) : (
-                                              <p style={{margin: '4px 0'}}>
-                                                {booking?.parent_email || 'Booked'}
-                                              </p>
-                                            )}
-                                            {booking?.checked_in && (
-                                              <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
-                                                ✓ Checked In
-                                              </p>
-                                            )}
-                                          </div>
-                                        );
-                                      })()}
-                                    </div>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                            
-                            {/* Aisle spacer */}
-                            {rowSeats.length > seatsPerColumn && (
-                              <div className="aisle-spacer"></div>
-                            )}
-                            
-                            {/* Second column */}
-                            {rowSeats.length > seatsPerColumn && (
-                              <div className="seats-column">
-                                {rowSeats.slice(seatsPerColumn).map((seat) => (
-                                  <div
-                                    key={seat.id}
-                                    className="seat-container"
-                                    onMouseEnter={() => setHoveredSeat(seat.id)}
-                                    onMouseLeave={() => setHoveredSeat(null)}
-                                  >
-                                    <button
-                                      className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
-                                      title={seat.is_booked ? 'Click to see booking' : 'Available'}
+                            {/* Loop through columns */}
+                            {Array.from({length: columns}, (_, colIndex) => (
+                              <div key={colIndex}>
+                                {/* Column seats */}
+                                <div className="seats-column">
+                                  {rowSeats.slice(colIndex * seatsPerColumn, (colIndex + 1) * seatsPerColumn).map((seat) => (
+                                    <div
+                                      key={seat.id}
+                                      className="seat-container"
+                                      onMouseEnter={() => setHoveredSeat(seat.id)}
+                                      onMouseLeave={() => setHoveredSeat(null)}
                                     >
-                                      {seat.seat_number}
-                                    </button>
-                                    
-                                    {hoveredSeat === seat.id && seat.is_booked && (
-                                      <div className="seat-tooltip">
-                                        {(() => {
-                                          const booking = bookings.find(b => b.seat_id === seat.id);
-                                          return (
-                                            <div>
-                                              <strong>{seat.row_name}{seat.seat_number}</strong>
-                                              {booking?.parent_first_name && booking?.parent_last_name ? (
-                                                <>
-                                                  <p style={{margin: '4px 0', fontSize: '13px', fontWeight: 'bold'}}>
-                                                    {booking.parent_first_name} {booking.parent_last_name}
-                                                  </p>
-                                                  <p style={{margin: '4px 0', fontSize: '11px'}}>
-                                                    {booking.parent_email}
-                                                  </p>
-                                                </>
-                                              ) : (
-                                                <p style={{margin: '4px 0'}}>
-                                                  {booking?.parent_email || 'Booked'}
-                                                </p>
-                                              )}
-                                              {booking?.checked_in && (
-                                                <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
-                                                  ✓ Checked In
-                                                </p>
-                                              )}
-                                            </div>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
+                                      <button
+                                        className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
+                                        title={seat.is_booked ? 'Click to see booking' : 'Available'}
+                                      >
+                                        {seat.seat_number}
+                                      </button>
+                                      
+                                      {hoveredSeat === seat.id && seat.is_booked && (
+                                        <div className="seat-tooltip">
+                                          {(() => {
+                                            const booking = bookings.find(b => b.seat_id === seat.id);
+                                            return (
+                                              <div>
+                                                <strong>{seat.row_name}{seat.seat_number}</strong>
+                                                {booking ? (
+                                                  <>
+                                                    {booking.parent_first_name && booking.parent_last_name && (
+                                                      <p style={{margin: '4px 0', fontSize: '13px', fontWeight: 'bold'}}>
+                                                        {booking.parent_first_name} {booking.parent_last_name}
+                                                      </p>
+                                                    )}
+                                                    <p style={{margin: '4px 0', fontSize: '11px'}}>
+                                                      {booking.parent_email}
+                                                    </p>
+                                                    {booking.checked_in && (
+                                                      <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
+                                                        ✓ Checked In
+                                                      </p>
+                                                    )}
+                                                  </>
+                                                ) : (
+                                                  <p style={{margin: '4px 0'}}>Booked</p>
+                                                )}
+                                              </div>
+                                            );
+                                          })()}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                {/* Aisle spacer between columns */}
+                                {colIndex < columns - 1 && (
+                                  <div className="aisle-spacer"></div>
+                                )}
                               </div>
-                            )}
+                            ))}
                           </div>
                           <div className="row-label-map">{rowName}</div>
                         </div>
