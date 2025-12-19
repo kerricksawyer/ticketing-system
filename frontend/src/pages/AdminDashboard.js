@@ -26,16 +26,38 @@ function AdminDashboard() {
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
   // Admin Login
-  const handleAdminLogin = (e) => {
+  const handleAdminLogin = async (e) => {
     e.preventDefault();
     if (password.trim() === '') {
       setError('Please enter admin password');
       return;
     }
-    setAdminPassword(password); // Store for API calls
-    setIsAuthenticated(true);
-    setError('');
-    // Don't clear password yet - we need it for loadShows/loadBookings
+    
+    try {
+      setError('');
+      // Validate password by trying to load shows with admin header
+      const response = await fetch(`${API_URL}/admin/shows`, {
+        headers: { 'x-admin-password': password }
+      });
+      
+      if (!response.ok) {
+        setError('Invalid admin password');
+        return;
+      }
+      
+      // Password is correct, authenticate and load data
+      setAdminPassword(password);
+      setIsAuthenticated(true);
+      setError('');
+      
+      // Load shows and bookings
+      const data = await response.json();
+      setShows(data);
+      await loadBookings();
+    } catch (err) {
+      setError('Authentication failed');
+      console.error(err);
+    }
   };
 
   const handleLogout = () => {
