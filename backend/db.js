@@ -22,6 +22,8 @@ const initializeDatabase = async () => {
         id SERIAL PRIMARY KEY,
         show_id INTEGER NOT NULL REFERENCES shows(id) ON DELETE CASCADE,
         row_name VARCHAR(10) NOT NULL,
+        columns INTEGER DEFAULT 1,
+        seats_per_column INTEGER DEFAULT 10,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
