@@ -6,7 +6,11 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo, confirmationToken, qrCodeData) => {
   try {
+    console.log('Starting confirmation email for:', parentEmail);
+    console.log('QR Code Data:', qrCodeData);
+    
     // Generate QR code as PNG buffer
+    console.log('Generating QR code...');
     const qrCodeBuffer = await QRCode.toBuffer(qrCodeData, {
       errorCorrectionLevel: 'H',
       type: 'image/png',
@@ -17,6 +21,7 @@ const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo
         light: '#FFFFFF',
       },
     });
+    console.log('QR code generated, size:', qrCodeBuffer.length, 'bytes');
 
     const msg = {
       to: parentEmail,
@@ -55,11 +60,16 @@ const sendConfirmationEmail = async (parentEmail, parentName, showName, seatInfo
       ],
     };
 
+    console.log('Sending email to:', parentEmail);
     await sgMail.send(msg);
     console.log('Confirmation email sent to', parentEmail);
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error sending confirmation email:', {
+      message: error.message,
+      code: error.code,
+      response: error.response?.body || error.response
+    });
     throw error;
   }
 };
