@@ -607,18 +607,19 @@ table tr:hover {
 
 .seats-grid-with-aisle {
   display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  gap: 15px;
+  width: 100%;
 }
 
 .seats-column {
   display: flex;
   flex-direction: row;
   gap: 8px;
-  justify-content: center;
   flex-wrap: wrap;
-  max-width: 350px;
+  justify-content: center;
+  width: 100%;
 }
 
 .aisle-spacer {
