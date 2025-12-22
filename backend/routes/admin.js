@@ -111,7 +111,13 @@ router.get('/shows', checkAdminPassword, async (req, res) => {
 router.get('/shows/:showId/bookings', checkAdminPassword, async (req, res) => {
   try {
     const result = await pool.query(`
-      SELECT b.*, p.email, p.first_name, p.last_name, s.seat_number, r.row_name
+      SELECT 
+        b.*, 
+        p.email as parent_email, 
+        p.first_name as parent_first_name, 
+        p.last_name as parent_last_name, 
+        s.seat_number, 
+        r.row_name
       FROM bookings b
       JOIN parents p ON b.parent_id = p.id
       JOIN seats s ON b.seat_id = s.id
