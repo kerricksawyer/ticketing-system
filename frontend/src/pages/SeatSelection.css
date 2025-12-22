@@ -152,3 +152,27 @@
   font-size: 1rem;
   font-weight: bold;
 }
+
+/* Seat rows with aisle support */
+
+.row-seats-with-aisles {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.seats-column {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 300px;
+}
+
+.aisle {
+  width: 20px;
+  background: linear-gradient(to right, #ddd, transparent, #ddd);
+  align-self: stretch;
+}

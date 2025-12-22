@@ -92,7 +92,11 @@ function SeatSelection() {
 
   // Sort seats within each row numerically
   Object.keys(seatsByRow).forEach(rowName => {
-    seatsByRow[rowName].sort((a, b) => a.seat_number - b.seat_number);
+    seatsByRow[rowName].sort((a, b) => {
+      const numA = parseInt(a.seat_number) || a.seat_number;
+      const numB = parseInt(b.seat_number) || b.seat_number;
+      return numA - numB;
+    });
   });
 
   // Sort rows alphabetically
@@ -116,27 +120,42 @@ function SeatSelection() {
         <div className="screen">SCREEN</div>
 
         <div className="seats">
-          {sortedRows.map((rowName) => (
-            <div key={rowName} className="seat-row">
-              <div className="row-label">{rowName}</div>
-              <div className="row-seats">
-                {seatsByRow[rowName].map((seat) => (
-                  <button
-                    key={seat.id}
-                    className={`seat ${seat.is_booked ? 'booked' : ''} ${
-                      selectedSeats.includes(seat.id) ? 'selected' : ''
-                    }`}
-                    onClick={() => handleSeatClick(seat.id, seat.is_booked)}
-                    disabled={seat.is_booked}
-                    title={seat.is_booked ? 'Already booked' : `${rowName}${seat.seat_number}`}
-                  >
-                    {seat.seat_number}
-                  </button>
-                ))}
+          {sortedRows.map((rowName) => {
+            const rowSeats = seatsByRow[rowName];
+            // Get column info from first seat in row
+            const firstSeat = rowSeats[0];
+            const columns = firstSeat?.columns || 1;
+            const seatsPerColumn = firstSeat?.seats_per_column || Math.ceil(rowSeats.length / columns);
+            
+            return (
+              <div key={rowName} className="seat-row">
+                <div className="row-label">{rowName}</div>
+                <div className="row-seats-with-aisles">
+                  {/* Render each column */}
+                  {Array.from({length: columns}, (_, colIndex) => (
+                    <div key={colIndex} className="seats-column">
+                      {rowSeats.slice(colIndex * seatsPerColumn, (colIndex + 1) * seatsPerColumn).map((seat) => (
+                        <button
+                          key={seat.id}
+                          className={`seat ${seat.is_booked ? 'booked' : ''} ${
+                            selectedSeats.includes(seat.id) ? 'selected' : ''
+                          }`}
+                          onClick={() => handleSeatClick(seat.id, seat.is_booked)}
+                          disabled={seat.is_booked}
+                          title={seat.is_booked ? 'Already booked' : `${rowName}${seat.seat_number}`}
+                        >
+                          {seat.seat_number}
+                        </button>
+                      ))}
+                    </div>
+                  ))}
+                  {/* Add aisle spacer if multiple columns */}
+                  {columns > 1 && <div className="aisle"></div>}
+                </div>
+                <div className="row-label">{rowName}</div>
               </div>
-              <div className="row-label">{rowName}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
