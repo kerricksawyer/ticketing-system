@@ -79,9 +79,12 @@ function AdminDashboard() {
   };
 
   // Load Bookings
-  const loadBookings = async () => {
+  const loadBookings = async (showId = null) => {
     try {
-      const response = await fetch(`${API_URL}/admin/shows/1/bookings`, {
+      // If no showId provided, load from first show (for initial load)
+      const id = showId || (shows.length > 0 ? shows[0].id : 1);
+      
+      const response = await fetch(`${API_URL}/admin/shows/${id}/bookings`, {
         headers: { 'x-admin-password': adminPassword }
       });
       if (response.ok) {
@@ -208,6 +211,7 @@ function AdminDashboard() {
   const handleSelectShowForMap = (showId) => {
     setSelectedShowForMap(showId);
     loadSeatsForMap(showId);
+    loadBookings(parseInt(showId)); // Load bookings for this specific show
   };
 
   // Delete a show
@@ -553,78 +557,64 @@ function AdminDashboard() {
                     // Sort rows and seats
                     const sortedRows = Object.keys(seatsByRow).sort();
                     Object.keys(seatsByRow).forEach(rowName => {
-                      seatsByRow[rowName].sort((a, b) => a.seat_number - b.seat_number);
+                      seatsByRow[rowName].sort((a, b) => {
+                        const numA = parseInt(a.seat_number) || a.seat_number;
+                        const numB = parseInt(b.seat_number) || b.seat_number;
+                        return numA - numB;
+                      });
                     });
 
                     return sortedRows.map((rowName) => {
                       const rowSeats = seatsByRow[rowName];
                       
-                      // Get column info from first seat in row
-                      const firstSeat = rowSeats[0];
-                      const columns = firstSeat?.columns || 1;
-                      const seatsPerColumn = firstSeat?.seats_per_column || Math.ceil(rowSeats.length / columns);
-                      
                       return (
                         <div key={rowName} className="seat-row-map">
                           <div className="row-label-map">{rowName}</div>
                           <div className="seats-grid-with-aisle">
-                            {/* Loop through columns */}
-                            {Array.from({length: columns}, (_, colIndex) => (
-                              <div key={colIndex}>
-                                {/* Column seats */}
-                                <div className="seats-column">
-                                  {rowSeats.slice(colIndex * seatsPerColumn, (colIndex + 1) * seatsPerColumn).map((seat) => (
-                                    <div
-                                      key={seat.id}
-                                      className="seat-container"
-                                      onMouseEnter={() => setHoveredSeat(seat.id)}
-                                      onMouseLeave={() => setHoveredSeat(null)}
-                                    >
-                                      <button
-                                        className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
-                                        title={seat.is_booked ? 'Click to see booking' : 'Available'}
-                                      >
-                                        {seat.seat_number}
-                                      </button>
-                                      
-                                      {hoveredSeat === seat.id && seat.is_booked && (
-                                        <div className="seat-tooltip">
-                                          {(() => {
-                                            const booking = bookings.find(b => b.seat_id === seat.id);
-                                            return (
-                                              <div>
-                                                <strong>{seat.row_name}{seat.seat_number}</strong>
-                                                {booking ? (
-                                                  <>
-                                                    {booking.parent_first_name && booking.parent_last_name && (
-                                                      <p style={{margin: '4px 0', fontSize: '13px', fontWeight: 'bold'}}>
-                                                        {booking.parent_first_name} {booking.parent_last_name}
-                                                      </p>
-                                                    )}
-                                                    <p style={{margin: '4px 0', fontSize: '11px'}}>
-                                                      {booking.parent_email}
-                                                    </p>
-                                                    {booking.checked_in && (
-                                                      <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
-                                                        ✓ Checked In
-                                                      </p>
-                                                    )}
-                                                  </>
-                                                ) : (
-                                                  <p style={{margin: '4px 0'}}>Booked</p>
-                                                )}
-                                              </div>
-                                            );
-                                          })()}
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
+                            {rowSeats.map((seat) => (
+                              <div
+                                key={seat.id}
+                                className="seat-container"
+                                onMouseEnter={() => setHoveredSeat(seat.id)}
+                                onMouseLeave={() => setHoveredSeat(null)}
+                              >
+                                <button
+                                  className={`seat-button ${seat.is_booked ? 'booked' : 'available'}`}
+                                  title={seat.is_booked ? 'Click to see booking' : 'Available'}
+                                >
+                                  {seat.seat_number}
+                                </button>
                                 
-                                {/* Aisle spacer between columns */}
-                                {colIndex < columns - 1 && (
-                                  <div className="aisle-spacer"></div>
+                                {hoveredSeat === seat.id && seat.is_booked && (
+                                  <div className="seat-tooltip">
+                                    {(() => {
+                                      const booking = bookings.find(b => b.seat_id === seat.id);
+                                      return (
+                                        <div>
+                                          <strong>{seat.row_name}{seat.seat_number}</strong>
+                                          {booking ? (
+                                            <>
+                                              {booking.parent_first_name && booking.parent_last_name && (
+                                                <p style={{margin: '4px 0', fontSize: '13px', fontWeight: 'bold'}}>
+                                                  {booking.parent_first_name} {booking.parent_last_name}
+                                                </p>
+                                              )}
+                                              <p style={{margin: '4px 0', fontSize: '11px'}}>
+                                                {booking.parent_email}
+                                              </p>
+                                              {booking.checked_in && (
+                                                <p style={{margin: '4px 0', color: '#27ae60', fontSize: '12px'}}>
+                                                  ✓ Checked In
+                                                </p>
+                                              )}
+                                            </>
+                                          ) : (
+                                            <p style={{margin: '4px 0'}}>Booked</p>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
+                                  </div>
                                 )}
                               </div>
                             ))}

@@ -122,35 +122,24 @@ function SeatSelection() {
         <div className="seats">
           {sortedRows.map((rowName) => {
             const rowSeats = seatsByRow[rowName];
-            // Get column info from first seat in row
-            const firstSeat = rowSeats[0];
-            const columns = firstSeat?.columns || 1;
-            const seatsPerColumn = firstSeat?.seats_per_column || Math.ceil(rowSeats.length / columns);
             
             return (
               <div key={rowName} className="seat-row">
                 <div className="row-label">{rowName}</div>
-                <div className="row-seats-with-aisles">
-                  {/* Render each column */}
-                  {Array.from({length: columns}, (_, colIndex) => (
-                    <div key={colIndex} className="seats-column">
-                      {rowSeats.slice(colIndex * seatsPerColumn, (colIndex + 1) * seatsPerColumn).map((seat) => (
-                        <button
-                          key={seat.id}
-                          className={`seat ${seat.is_booked ? 'booked' : ''} ${
-                            selectedSeats.includes(seat.id) ? 'selected' : ''
-                          }`}
-                          onClick={() => handleSeatClick(seat.id, seat.is_booked)}
-                          disabled={seat.is_booked}
-                          title={seat.is_booked ? 'Already booked' : `${rowName}${seat.seat_number}`}
-                        >
-                          {seat.seat_number}
-                        </button>
-                      ))}
-                    </div>
+                <div className="row-seats">
+                  {rowSeats.map((seat) => (
+                    <button
+                      key={seat.id}
+                      className={`seat ${seat.is_booked ? 'booked' : ''} ${
+                        selectedSeats.includes(seat.id) ? 'selected' : ''
+                      }`}
+                      onClick={() => handleSeatClick(seat.id, seat.is_booked)}
+                      disabled={seat.is_booked}
+                      title={seat.is_booked ? 'Already booked' : `${rowName}${seat.seat_number}`}
+                    >
+                      {seat.seat_number}
+                    </button>
                   ))}
-                  {/* Add aisle spacer if multiple columns */}
-                  {columns > 1 && <div className="aisle"></div>}
                 </div>
                 <div className="row-label">{rowName}</div>
               </div>

@@ -159,7 +159,9 @@
   display: flex;
   gap: 15px;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
 .seats-column {
@@ -168,11 +170,12 @@
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
-  max-width: 300px;
+  max-width: 400px;
 }
 
 .aisle {
-  width: 20px;
-  background: linear-gradient(to right, #ddd, transparent, #ddd);
-  align-self: stretch;
+  width: 2px;
+  height: 50px;
+  background: #ccc;
+  margin: 0 10px;
 }
